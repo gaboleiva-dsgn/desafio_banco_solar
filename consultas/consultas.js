@@ -11,15 +11,17 @@ const pool = new Pool({
     port: process.env.DB_PORT
 });
 async function agregar(nombre, balance) {
+    const tabla = "usuarios";
     console.log("Valores recibidos: ", nombre, balance);
     try {
         const result = await pool.query({
-            text: 'INSERT INTO usuarios (nombre, balance) VALUES ($1, $2) RETURNING *',
+            text: `INSERT INTO ${tabla} (nombre, balance) VALUES ($1, $2) RETURNING *`,
             values: [nombre, balance]
         });
         console.log("Registro agregado: ", result.rows[0]);
         return result.rows[0];
     } catch (error) {
+        // console.log(error);  // pinta el error completo
         return manejoErrores(error, pool, tabla);
     }
 };
@@ -52,7 +54,7 @@ async function eliminar(id) {
 }
 
 async function transferir (emisor, receptor, monto) {
-    console.log("Valores recibidos: ", emisor, receptor, monto);
+    const saldoEmisor = await obtenerSaldo(emisor);
     try {
         await pool.query('BEGIN');
 
@@ -68,7 +70,8 @@ async function transferir (emisor, receptor, monto) {
         return { mensaje: 'Transferencia exitosa' };
     } catch (error) {
         await pool.query('ROLLBACK');
-        return manejoErrores(error, pool, tabla);
+        throw error
+        // return manejoErrores(error, pool, tabla);
     }
 };
 
@@ -78,4 +81,9 @@ async function mostrarTransferencias () {
     return result.rows;
 }
 
-export { agregar, todos, editar, eliminar, transferir, mostrarTransferencias };
+async function obtenerSaldo (id) {
+    const { rows } = await pool.query("SELECT balance FROM usuarios WHERE id = $1", [id]);
+    return rows[0].balance;
+}
+
+export { agregar, todos, editar, eliminar, transferir, mostrarTransferencias, obtenerSaldo };

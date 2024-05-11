@@ -6,9 +6,10 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Servidor Express levantado y escuchando por el puerto ${PORT}`);
 });
+import { manejoErrores } from './errores/moduloErrores.js';
 
 // Importamos funciones de consulta/consulta.js 
-import { agregar, todos, editar, eliminar, transferir, mostrarTransferencias } from './consultas/consultas.js';
+import { agregar, todos, editar, eliminar, transferir, mostrarTransferencias, obtenerSaldo } from './consultas/consultas.js';
 
 // Middleware 
 app.use(express.json());
@@ -21,11 +22,11 @@ app.get("/", (req, res) => {
 // Ruta que agrega un usuario a la base de datos.
 app.post("/usuario", async (req, res) => {
     const { nombre, balance } = req.body;
-    try {
-        const result = await agregar(nombre, balance);
-        res.send(result);
-    } catch (error) {
-    res.send(error);    
+    if (!nombre || !balance) {
+        res.status(400).json({ mensaje: "Debe ingresar todos los datos" });
+    } else {
+            const result = await agregar(nombre, balance);
+            res.send(result);
     }
 });
 
@@ -64,9 +65,17 @@ app.delete("/usuario", async (req, res) => {
 
 // transferencia 
 app.post("/transferencia", async (req, res) => {
-    console.log("Valores recibidos: ", req.body);
+    //console.log("Valores recibidos: ", req.body);
     const { emisor, receptor, monto } = req.body;
+    if (!emisor ||!receptor ||!monto) {
+        res.status(400).json({ mensaje: "Debe ingresar todos los datos" });
+    }
     try {
+        const saldoEmisor = await obtenerSaldo(emisor);
+        if (saldoEmisor < monto) {
+            return res.status(400).json({ mensaje: "No hay suficiente saldo del emisor para hacer la transferencia" });
+            res.send(error);
+        }
         const result = await transferir(emisor, receptor, monto);
         res.json(result);
     } catch (error) {
