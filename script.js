@@ -8,7 +8,7 @@ app.listen(PORT, () => {
 });
 
 // Importamos funciones de consulta/consulta.js 
-import { agregar, todos, editar, eliminar, transferir } from './consultas/consultas.js';
+import { agregar, todos, editar, eliminar, transferir, mostrarTransferencias } from './consultas/consultas.js';
 
 // Middleware 
 app.use(express.json());
@@ -40,9 +40,8 @@ app.get("/usuarios", async (req, res) => {
 });
 
 // Ruta que recibe los datos modificados de un usuario y los actualiza en la base de datos.
-app.put("/usuario/:id", async (req, res) => {
-    const { id } = req.params;
-    const { nombre, balance } = req.body;
+app.put("/usuario", async (req, res) => {
+    const { id, nombre, balance } = req.body;
     try {
         const result = await editar(id, nombre, balance);
         res.json(result);
@@ -64,10 +63,21 @@ app.delete("/usuario", async (req, res) => {
 });
 
 // transferencia 
-app.post("/transferencias", async (req, res) => {
+app.post("/transferencia", async (req, res) => {
+    console.log("Valores recibidos: ", req.body);
     const { emisor, receptor, monto } = req.body;
     try {
         const result = await transferir(emisor, receptor, monto);
+        res.json(result);
+    } catch (error) {
+        res.json(error);
+    }
+});
+
+// mostras transferencias
+app.get("/transferencias", async (req, res) => {
+    try {
+        const result = await mostrarTransferencias();
         res.json(result);
     } catch (error) {
         res.json(error);

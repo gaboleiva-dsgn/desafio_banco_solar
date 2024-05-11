@@ -30,8 +30,12 @@ async function todos() {
 }
 
 async function editar (id, nombre, balance) {
+    try {
         const result = await pool.query('UPDATE usuarios SET nombre = $1, balance = $2 WHERE id = $3 RETURNING *', [nombre, balance, id]);
         return result.rows[0];
+    } catch (error) {
+        return manejoErrores(error, pool, tabla);
+    }
 };
 
 async function eliminar(id) {
@@ -48,11 +52,30 @@ async function eliminar(id) {
 }
 
 async function transferir (emisor, receptor, monto) {
+    console.log("Valores recibidos: ", emisor, receptor, monto);
     try {
-        
+        await pool.query('BEGIN');
+
+        await pool.query('UPDATE usuarios SET balance = balance - $1 WHERE id = $2', [monto, emisor]);
+
+        await pool.query('UPDATE usuarios SET balance = balance + $1 WHERE id = $2', [monto, receptor]);
+
+        const fecha = new Date();
+
+        await pool.query('INSERT INTO transferencias (emisor, receptor, monto, fecha) VALUES ($1, $2, $3, $4)', [emisor, receptor, monto, fecha]);
+
+        await pool.query('COMMIT');
+        return { mensaje: 'Transferencia exitosa' };
     } catch (error) {
+        await pool.query('ROLLBACK');
         return manejoErrores(error, pool, tabla);
     }
 };
 
-export { agregar, todos, editar, eliminar, transferir };
+async function mostrarTransferencias () {
+    const idPorNombre = `SELECT t.fecha, t.monto, e.nombre AS emisor, r.nombre AS receptor FROM transferencias t INNER JOIN usuarios e ON t.emisor = e.id INNER JOIN usuarios r ON t.receptor = r.id`;
+    const result = await pool.query(idPorNombre);
+    return result.rows;
+}
+
+export { agregar, todos, editar, eliminar, transferir, mostrarTransferencias };
