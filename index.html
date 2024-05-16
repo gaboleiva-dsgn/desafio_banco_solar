@@ -163,6 +163,8 @@
 </style>
 
 <script>
+  // Importamos funciones de consulta/consulta.js 
+
   const setInfoModal = (nombre, balance, id) => {
     $("#nombreEdit").val(nombre);
     $("#balanceEdit").val(balance);
@@ -218,6 +220,10 @@
     let monto = $("#monto").val();
     if (!monto || !emisor || !receptor) {
       alert("Debe seleccionar un emisor, receptor y monto a transferir");
+      return false;
+    }
+    else if (monto <= 0) {
+      alert("El monto a transferir debe ser mayor a 0");
       return false;
     }
     try {

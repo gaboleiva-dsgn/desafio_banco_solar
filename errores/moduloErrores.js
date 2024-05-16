@@ -1,4 +1,4 @@
-const manejoErrores = (error, pool, tabla) => {
+function manejoErrores (errorCode) {
     let status, message;
 
     switch (error.code) {
@@ -9,6 +9,14 @@ const manejoErrores = (error, pool, tabla) => {
         case '3D000':
             status = 500;
             message = "La base de datos no existe ";
+            break;
+        case '42P01':
+            status = 500;
+            message = "La tabla no existe en la base de datos";
+            break;
+        case '23505':
+            status = 400;
+            message = "Ya existe un registro con el mismo valor";
             break;
         case 'ENOTFOUND':
             status = 500;
@@ -22,16 +30,12 @@ const manejoErrores = (error, pool, tabla) => {
             status = 500;
             message = "Conexión reseteada por el servidor de base de datos";
             break;
-        case '42P01':
-            status = 500;
-            message = "La tabla no existe en la base de datos";
-            break;
         default:
             status = 500;
             message = "Error genérico del servidor";
             break;
     }
-    return { status, message, code: error.code };
+    return {  errorCode, status, message };
 };
 
 export { manejoErrores };
